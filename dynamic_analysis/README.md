@@ -41,6 +41,47 @@
 
 ---
 
+## Tâche 4 — Résolution de 100 Binaires
+
+**Binaires :** `Dy_task4/binary_000` à `binary_099`
+**Flag :** `Holberton{automating_and_automating_is_e5senti4l_in_rev3rs3_eng1neering_g_6X102LJ8ZI1GYRKCKFYVVEW20DO}`
+
+**Outils :** `objdump`, Python
+
+**Méthode :**
+1. `file binary_001` → ELF 64-bit, non strippé
+2. Analyse d'un binaire type : chaque `main` suit le même schéma :
+   - Redirige stdout via `freopen` (sortie silencieuse)
+   - Lit un caractère via `scanf`
+   - Effectue une opération arithmétique : `char - constante` ou `constante + char`
+   - Compare le résultat avec une valeur cible hardcodée
+   - Affiche "Correct" ou "Incorrect" (dans le fichier redirigé)
+3. **Deux patterns identifiés** :
+   - `sub -0xc(%rbp),%eax` + `cmp $target` → `char = target + const`
+   - `add %edx,%eax` + `cmp $target` → `char = target - const`
+4. **Automatisation Python** avec `objdump` + regex sur les 100 binaires :
+   - Extraction de `movl $const,-0xc(%rbp)` → constante
+   - Extraction de `cmp $target,%eax` → valeur cible
+   - Détection de l'opération (`sub` ou `add`)
+   - Calcul du caractère et reconstruction du flag
+
+**Script Python :**
+```python
+for i in range(100):
+    out = objdump(f"binary_{i:03d}")
+    const = extract_movl_const(out)
+    target = extract_cmp_target(out)
+    if op == 'sub':
+        char = (target + const) & 0xFF
+    else:
+        char = (target - const) & 0xFF
+    flag += chr(char)
+```
+
+**Leçon :** Face à N binaires identiques en structure, l'automatisation est indispensable. `objdump` + regex Python permet de résoudre 100 binaires en quelques secondes sans exécuter un seul binaire.
+
+---
+
 ## Tâche 3 — Self-Modifying Code
 
 **Binaire :** `Dy_task3`  
