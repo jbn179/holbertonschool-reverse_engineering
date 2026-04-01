@@ -41,6 +41,44 @@
 
 ---
 
+## Tâche 3 — Self-Modifying Code
+
+**Binaire :** `Dy_task3`  
+**Flag :** `Holberton{what_about_a_self_modyfing_prog}`
+
+**Outils :** `objdump`, `GDB`, Python
+
+**Méthode :**
+1. `file Dy_task3` → ELF 32-bit, `strings` révèle `mprotect` — signe caractéristique de self-modifying code
+2. `objdump` identifie les fonctions : `x1`, `x2`, `x`, `main`
+3. **Analyse du `main`** :
+   - Lit l'input via `scanf`
+   - Appelle `x1(input, key, 0x80)` → XOR l'input avec une clé cyclique
+   - Appelle `x2(code_ptr, size, key)` → déchiffre le code chiffré en mémoire avec la même clé
+   - Appelle `x(code_ptr, size)` → `mprotect` pour rendre la région exécutable
+   - Appelle `call *%edx` → exécute le code déchiffré avec `edi = input_xoré`
+4. **Analyse de `x1` et `x2`** — même algorithme :
+   ```
+   pour i in range(len):
+       buf[i] ^= key[i % strlen(key)]
+   ```
+5. **Clé XOR** : trouvée dans `.rodata` à offset `ebx-0x1fa4` :
+   `kjkjf_ckzj9274jdlfdvn-dpakkk__AhfNNtdsp592` (42 chars)
+6. **Extraction du code déchiffré** via GDB :
+   - Breakpoint avant `call *%edx` : `break *main+0xfd`
+   - `x/150bx $eax` → dump des 129 bytes déchiffrés (`encrypted_section1`)
+7. **Désassemblage du code déchiffré** (x86 32-bit) :
+   - Lit l'input XOR-ifié par blocs de 4 bytes (`DWORD`) via `[edi+offset]`
+   - 10 comparaisons `cmp eax, valeur` + 1 comparaison `WORD`
+   - Retourne 1 si toutes passent, 0 sinon
+8. **Inversion** : `flag[i] = compared[i] ^ key[i % 42]`
+   - Valeurs comparées (little-endian) : `0x08070523`, `0x04172d03`, `0x5a4e1114`, ...
+   - XOR avec la clé → flag en clair
+
+**Leçon :** Le self-modifying code chiffre ses propres instructions dans le binaire et les déchiffre au runtime via `mprotect`. GDB permet de dumper le code après déchiffrement, avant exécution — on peut alors le désassembler statiquement pour analyser la logique de validation.
+
+---
+
 ## Tâche 2 — SAT Solving par brute force chaîné
 
 **Binaire :** `Dy_task2`
