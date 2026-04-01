@@ -35,6 +35,25 @@
 
 ---
 
+## Tâche 3 — Rétro-ingénierie d'un flag obfusqué
+
+**Binaire :** `main3`  
+**Flag :** `Holberton{Do_you_think_now_you_are_a_master_of_obfuscation?}`
+
+**Outils :** `objdump`, Python (brute force)
+
+**Méthode :**
+1. `objdump -d main3` — désassemblage de `check_flag` (60 valeurs attendues dans un tableau local)
+2. L'algorithme applique à chaque caractère d'entrée une transformation selon sa position :
+   - Position **paire** : `(c × 0xD2) XOR 0x90 & 0xFF`
+   - Position **impaire** : `(c × 0x13C) XOR 0x9E0 & 0xFF`
+3. Brute force de tous les caractères imprimables pour chaque position → collisions aux positions impaires (ex. `'/'` et `'o'` donnent le même résultat)
+4. Résolution des collisions par le contexte : format `Holberton{...}`, caractères attendus = lettres minuscules ou `_`, dernier caractère = symbole `}`
+
+**Note :** La multiplication non inversible crée des collisions — plusieurs caractères produisent la même valeur transformée. Le contexte du flag permet de lever l'ambiguïté.
+
+---
+
 ## Tâche 2 — Optimisation d'un algorithme de déchiffrement
 
 **Binaire :** `main02`  
