@@ -28,7 +28,7 @@ fi
 # Extract fields using readelf
 magic_number=$(readelf -h "$file_name" | grep "Magic" | awk '{$1=""; print $0}' | xargs)
 class=$(readelf -h "$file_name" | grep "Class:" | awk '{print $2}')
-byte_order=$(readelf -h "$file_name" | grep "Data:" | sed 's/.*Data:[[:space:]]*//')
+byte_order=$(readelf -h "$file_name" | grep "Data:" | sed 's/.*Data:[[:space:]]*//' | sed 's/.*complement, //')
 entry_point_address=$(readelf -h "$file_name" | grep "Entry point address:" | awk '{print $NF}')
 
 # Display using messages.sh function
