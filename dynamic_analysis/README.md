@@ -44,7 +44,7 @@
 ## Tâche 4 — Résolution de 100 Binaires
 
 **Binaires :** `Dy_task4/binary_000` à `binary_099`
-**Flag :** `Holberton{automating_and_automating_is_e5senti4l_in_rev3rs3_eng1neering_g_6X102LJ8ZI1GYRKCKFYVVEW20DO}`
+**Flag :** `Holberton{automating_and_automating_is_e5senti4l_in_rev3rs3_eng1neering_6X102LJ8ZI1GYRKCKFYVVEW20DO}`
 
 **Outils :** `objdump`, Python
 
