@@ -14,30 +14,35 @@
 
 ---
 
-## Tâche 0 — SAT Solving avec angr
+## Tâche 0 — SAT Solving avec brute force aléatoire
 
 **Binaire :** `Dy_task0`
-**Flag :** (en cours — angr en exécution, ~35 min)
+**Flag :** `Holberton{bLnRb.0Nnp\E>C/'LUR-y9;4}`
 
-**Outils :** `angr`, Python
+**Outils :** `objdump`, `GDB`, Python
 
 **Méthode :**
 1. `strings Dy_task0` révèle : `Holberton{`, `Enter the flag:`, `Correct flag!`, `Incorrect flag.`, `verify_flag`
 2. `objdump -d Dy_task0 | grep "^[0-9a-f]* <"` identifie les fonctions : `verify_flag`, `main`
-3. Analyse de `verify_flag` :
+3. **Analyse de `verify_flag`** :
    - Vérifie que la longueur est 0x23 (35 caractères)
    - Compare les 10 premiers caractères avec `Holberton{` via `strncmp`
    - Vérifie que le dernier caractère est `}` (0x7d)
    - Extrait les 24 caractères du corps dans un buffer local
-   - Calcule 4 accumulateurs (S, P, A, X) via une boucle sur les 24 caractères avec des multiplications et modulos imbriqués
-   - Vérifie que le résultat final égale `0xae44`
-4. Script angr lancé avec exploration symbolique :
-   - 35 variables `BVS` de 8 bits représentant les caractères du flag
-   - Contraintes : caractères imprimables (0x20–0x7e)
-   - `simgr.explore(find=Correct, avoid=Incorrect)`
-   - Temps d'exécution estimé : ~35 minutes
+   - Calcule 4 accumulateurs (S, P, A, X) via une boucle sur les 24 caractères :
+     - `S += signed_mod256((i+1)*c*(i+2))` via `cltd` + `shr $0x18`
+     - `P *= (i*7 + c + 0x1f) % 123` via magic multiply `0x214d0215`
+     - `A += signed_mod512((i+1)*c + i*i)` via `sar $0x1f` + `shr $0x17`
+     - `X ^= signed_mod1024((i+3)*c + 0x11)` via `sar $0x1f` + `shr $0x16`
+   - Calcule `r1 = (S*P + A - X) ^ 0xdeadbeef) & 0xffffff`
+   - Calcule `inner = S*P + r1 - A*X - 0x35014542`
+   - Calcule `r2 = inner % 987654` via magic multiply `0x87e53f15` (imul 64-bit signé sur `inner>>1`)
+   - Vérifie que `r2 == 0xae44`
+4. **Validation GDB** : breakpoint à `0x555555554000 + 0x13f9` (adresse PIE), vérification que `rdx = 0xe994` pour input `aaa...` — confirme l'implémentation Python correcte
+5. **Point critique** : `imul %rcx,%rax` à `0x13e1` est une multiplication **64-bit signée** — `rcx` est sign-extended depuis `ecx`. Une implémentation non-signée donne un résultat incorrect.
+6. **Résolution** : brute force Python — 23 chars aléatoires + énumération exhaustive du 24ème char (95 valeurs) jusqu'à `r2 == 0xae44`
 
-**Leçon :** angr permet de résoudre des contraintes complexes sans avoir à les modéliser manuellement — le moteur d'exécution symbolique explore automatiquement les chemins d'exécution.
+**Leçon :** Pour les binaires PIE, les adresses `objdump` sont relatives — il faut ajouter la base (trouvée via `info proc mappings` dans GDB après `starti`) pour poser les breakpoints. Une seule instruction `imul` en mode 64-bit signé peut invalider toute une implémentation de vérification.
 
 ---
 
